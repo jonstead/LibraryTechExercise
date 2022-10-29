@@ -44,10 +44,13 @@ footer {
 	
 	<form action="Search_Onstead" method="POST">
 	
-		Book Title: <input type="text" name="keyword"> <br />
+		Keyword: <input type="text" name="keyword"> <br />
+		Search Within, Book, Author First, or Author Last: <input type="text" name="searchType"> <br />
+		Minimum Words: <input type="text" name="minWords"> <br />
 		
 		<input type="submit" value="Search" />
 	</form>
+	<h1> Improper usage, such as not typing exactly as above, results in searching by Book Name, no minimum and no keyword. </h1>
 
 </section>
 

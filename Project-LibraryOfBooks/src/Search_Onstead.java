@@ -21,10 +21,19 @@ public class Search_Onstead extends HttpServlet {
 
    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
       String keyword = request.getParameter("keyword");
-      search(keyword, response);
+      String searchType = request.getParameter("searchType");
+      String minWords = request.getParameter("minWords");
+      int minWordsCount;
+      if(minWords.isEmpty()) {
+          minWordsCount = 0;
+      }
+      else {
+    	  minWordsCount = Integer.valueOf(minWords);
+      }
+      search(keyword, searchType, minWordsCount, response);
    }
 
-   void search(String keyword, HttpServletResponse response) throws IOException {
+   void search(String keyword, String searchType, int minWordsCount, HttpServletResponse response) throws IOException {
       response.setContentType("text/html");
       PrintWriter out = response.getWriter();
       String title = "Library Database Result";
@@ -38,18 +47,42 @@ public class Search_Onstead extends HttpServlet {
 
       Connection connection = null;
       PreparedStatement preparedStatement = null;
+      keyword = keyword.toLowerCase();
       try {
          DBConnectionOnstead.getDBConnection();
          connection = DBConnectionOnstead.connection;
+         String Main = "";
 
          if (keyword.isEmpty()) {
             String selectSQL = "SELECT * FROM LibraryTable";
             preparedStatement = connection.prepareStatement(selectSQL);
-         } else {
-            String selectSQL = "SELECT * FROM LibraryTable WHERE Book LIKE ?";
-            String BookTitle = keyword + "%";
-            preparedStatement = connection.prepareStatement(selectSQL);
-            preparedStatement.setString(1, BookTitle);
+            Main = "Book";
+         }
+         else {
+        	 if(searchType.equals("Book") || searchType.isEmpty() || (searchType.equals("Author First") == false && searchType.equals("Author Last") == false))
+        	 {
+        		 String selectSQL = "SELECT * FROM LibraryTable WHERE Book LIKE ?";
+        		 String BookTitle = keyword + "%";
+        		 preparedStatement = connection.prepareStatement(selectSQL);
+        		 preparedStatement.setString(1, BookTitle);
+        		 Main = "Book";
+        	 }
+        	 else if(searchType.equals("Author First"))
+        	 {
+        		 String selectSQL = "SELECT * FROM LibraryTable WHERE First LIKE ?";
+        		 String authorFirst = keyword + "%";
+        		 preparedStatement = connection.prepareStatement(selectSQL);
+        		 preparedStatement.setString(1, authorFirst);
+        		 Main = "First";
+        	 }
+        	 else if(searchType.equals("Author Last"))
+        	 {
+        		 String selectSQL = "SELECT * FROM LibraryTable WHERE Last LIKE ?";
+        		 String authorLast = keyword + "%";
+        		 preparedStatement = connection.prepareStatement(selectSQL);
+        		 preparedStatement.setString(1, authorLast);
+        		 Main = "Last";
+        	 }
          }
          ResultSet rs = preparedStatement.executeQuery();
 
@@ -60,16 +93,56 @@ public class Search_Onstead extends HttpServlet {
             String Last = rs.getString("Last").trim();
             String Pages = rs.getString("Pages").trim();
             String Words = rs.getString("Words").trim();
-
-            if (keyword.isEmpty() || Book.contains(keyword)) {
-               out.println("ID: " + id + ", ");
-               out.println("Book Title: " + Book + ", ");
-               out.println("Authors First Name: " + First + ", ");
-               out.println("Authors Last Name: " + Last + "<br>");
-               out.println("Total Pages: " + Pages + "<br>");
-               out.println("Total Words: " + Words + "<br>");
+        	String WordsPlaceHold = Words;
+            if(isNumeric(Words) == false) {
+            	Words = "0";
             }
-         }
+            if(Main.equals("Book")) {
+            	if ((keyword.isEmpty() || Book.toLowerCase().contains(keyword)) && minWordsCount <= Integer.valueOf(Words)) {
+            		out.println("ID: " + id + ", ");
+            		out.println("Book Title: " + Book + ", ");
+            		out.println("Authors First Name: " + First + ", ");
+            		out.println("Authors Last Name: " + Last + "<br>");
+            		out.println("Total Pages: " + Pages + "<br>");
+            		if(isNumeric(WordsPlaceHold) == false) {
+                		out.println("Total Words: " + WordsPlaceHold + "<br>");
+            		}
+            		else {
+            			out.println("Total Words: " + Words + "<br>");
+            			}
+            		}
+            	}
+            else if(Main.equals("First")) {
+            	if ((keyword.isEmpty() || First.toLowerCase().contains(keyword)) && minWordsCount <= Integer.valueOf(Words)) {
+            		out.println("ID: " + id + ", ");
+            		out.println("Book Title: " + Book + ", ");
+            		out.println("Authors First Name: " + First + ", ");
+            		out.println("Authors Last Name: " + Last + "<br>");
+            		out.println("Total Pages: " + Pages + "<br>");
+            		if(isNumeric(WordsPlaceHold) == false) {
+                		out.println("Total Words: " + WordsPlaceHold + "<br>");
+            		}
+            		else {
+            			out.println("Total Words: " + Words + "<br>");
+            			}
+            		}
+            	}
+            else if(Main.equals("Last")) {
+            	if ((keyword.isEmpty() || Last.toLowerCase().contains(keyword)) && minWordsCount <= Integer.valueOf(Words)) {
+            		out.println("ID: " + id + ", ");
+            		out.println("Book Title: " + Book + ", ");
+            		out.println("Authors First Name: " + First + ", ");
+            		out.println("Authors Last Name: " + Last + "<br>");
+            		out.println("Total Pages: " + Pages + "<br>");
+            		if(isNumeric(WordsPlaceHold) == false) {
+                		out.println("Total Words: " + WordsPlaceHold + "<br>");
+            		}
+            		else {
+            			out.println("Total Words: " + Words + "<br>");
+            			}
+            		}
+            	}
+            }
          out.println("<a href=\"/Project-LibraryOfBooks/insert_onstead.html\">Insert a Book into the Library</a> <br>");
          out.println("</body></html>");
          rs.close();
@@ -98,4 +171,7 @@ public class Search_Onstead extends HttpServlet {
       doGet(request, response);
    }
 
+   public static boolean isNumeric(String str) {
+	   return str.matches("-?\\d+(\\.\\d+)?");
+	   }
 }
